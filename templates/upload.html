@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>上傳檔案</title>
+    <style>
+        /* 基礎樣式 */
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+
+        /* 導航欄樣式 */
+        .nav-bar {
+            background-color: #2c3e50;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin-right: 10px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-bar a:hover {
+            background-color: #34495e;
+        }
+
+        .nav-bar a.active {
+            background-color: #3498db;
+        }
+
+        /* 主容器樣式 */
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        /* 上傳表單容器 */
+        .upload-form {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .upload-form h2 {
+            color: #2c3e50;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+
+        /* 拖放區域 */
+        .drop-zone {
+            width: 100%;
+            min-height: 200px;
+            border: 2px dashed #3498db;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+            cursor: pointer;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+
+        .drop-zone:hover {
+            background-color: #f0f9ff;
+            border-color: #2980b9;
+        }
+
+        .drop-zone.dragover {
+            border-color: #2ecc71;
+            background-color: #f0f9ff;
+        }
+
+        .drop-zone-text {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .drop-zone:hover .drop-zone-text {
+            color: #2980b9;
+        }
+
+        .drop-zone-button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .drop-zone-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 文件類型提示 */
+        .file-types {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        /* 已選擇文件列表 */
+        .selected-files {
+            margin-top: 20px;
+        }
+
+        .selected-files ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .selected-files li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .selected-files li button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* 上傳按鈕 */
+        .upload-button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .upload-button:hover {
+            background-color: #27ae60;
+        }
+
+        /* 提示消息 */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 15px;
+            background-color: #d4edda;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="{{ url_for('chat') }}" {% if request.endpoint == 'chat' %}class="active"{% endif %}>聊天</a>
+        <a href="{{ url_for('upload_file') }}" {% if request.endpoint == 'upload_file' %}class="active"{% endif %}>上傳檔案</a>
+    </div>
+
+    <div class="container">
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flash-message">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="upload-form">
+            <h2>上傳知識庫文件</h2>
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                <div class="drop-zone" id="dropZone" onclick="handleZoneClick(event)">
+                    <input type="file" name="files[]" multiple style="display: none" id="fileInput">
+                    <div class="drop-zone-text">拖放文件到此處或點擊此處上傳</div>
+                    <button type="button" class="drop-zone-button" onclick="handleButtonClick(event)">
+                        選擇文件
+                    </button>
+                </div>
+                <div class="file-types">
+                    支援的檔案類型：txt, pdf, doc, docx, md
+                </div>
+                <div class="selected-files" id="selectedFiles" style="display: none">
+                    <ul></ul>
+                </div>
+                <button type="submit" class="upload-button">上傳文件</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFiles = document.getElementById('selectedFiles');
+        const fileList = selectedFiles.querySelector('ul');
+
+        // 拖放相關事件
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('dragover');
+        }
+
+        // 處理文件拖放
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        // 處理文件選擇
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                selectedFiles.style.display = 'block';
+                fileList.innerHTML = '';
+                Array.from(files).forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = `${file.name} (${formatFileSize(file.size)})`;
+                    fileList.appendChild(li);
+                });
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 處理整個區域的點擊
+        function handleZoneClick(event) {
+            // 如果點擊的不是按鈕，則觸發文件選擇
+            if (!event.target.classList.contains('drop-zone-button')) {
+                document.getElementById('fileInput').click();
+            }
+        }
+
+        // 處理按鈕點擊
+        function handleButtonClick(event) {
+            event.stopPropagation();  // 阻止事件冒泡
+            document.getElementById('fileInput').click();
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI 聊天助手</title>
+    <style>
+        /* 基礎樣式 */
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+
+        /* 導航欄樣式 */
+        .nav-bar {
+            background-color: #2c3e50;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin-right: 10px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-bar a:hover {
+            background-color: #34495e;
+        }
+
+        .nav-bar a.active {
+            background-color: #3498db;
+        }
+
+        /* 主容器樣式 */
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 30px;
+            display: flex;
+            gap: 30px;
+            height: calc(100vh - 120px);
+            overflow: hidden;
+        }
+
+        /* 側邊欄樣式 */
+        .sidebar {
+            width: 350px;
+            min-width: 350px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 文件選擇區域 */
+        .file-selection {
+            margin-bottom: 20px;
+        }
+
+        .file-selection h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .file-selection select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #fff;
+        }
+
+        .file-selection select[multiple] {
+            height: 300px;
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        /* 選項容器樣式 */
+        .file-selection select[multiple] option {
+            padding: 8px;
+            min-width: 100%;    /* 確保選項至少與容器一樣寬 */
+            width: max-content; /* 根據內容調整寬度 */
+            display: block;     /* 確保選項佔據整行 */
+            box-sizing: border-box;
+            white-space: nowrap;  /* 防止文字換行 */
+        }
+
+        /* 滾動條樣式 */
+        .file-selection select[multiple] {
+            overflow: auto;      /* 同時啟用水平和垂直滾動 */
+            scrollbar-width: thin;  /* Firefox */
+            scrollbar-color: #888 #f1f1f1;  /* Firefox */
+        }
+
+        /* Webkit 瀏覽器的滾動條樣式 */
+        .file-selection select[multiple]::-webkit-scrollbar {
+            width: 8px;              /* 垂直滾動條寬度 */
+            height: 8px;             /* 水平滾動條高度 */
+        }
+
+        .file-selection select[multiple]::-webkit-scrollbar-track {
+            background: #f1f1f1;     /* 滾動條軌道顏色 */
+            border-radius: 4px;
+        }
+
+        .file-selection select[multiple]::-webkit-scrollbar-thumb {
+            background: #888;        /* 滾動條顏色 */
+            border-radius: 4px;
+        }
+
+        .file-selection select[multiple]::-webkit-scrollbar-thumb:hover {
+            background: #555;        /* 滾動條懸停顏色 */
+        }
+
+        .file-selection select[multiple]::-webkit-scrollbar-corner {
+            background: #f1f1f1;     /* 滾動條交叉處的顏色 */
+        }
+
+        /* 主要內容區域 */
+        .main-content {
+            flex-grow: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 聊天區域 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 修改聊天標題區域樣式 */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background-color: #f8f9fa;
+        }
+
+        .header-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .clear-uploads-btn {
+            background-color: #8e44ad;  /* 紫色 */
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 10px;  /* 確保與清除聊天記錄按鈕有間距 */
+        }
+
+        .clear-uploads-btn:hover {
+            background-color: #6c3483;  /* 深紫色 */
+        }
+
+        .clear-chat-btn {
+            background-color: #e74c3c;  /* 保持原來的紅色 */
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .clear-chat-btn:hover {
+            background-color: #c0392b;  /* 保持原來的深紅色 */
+        }
+
+        .chat-header h2 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 1.5rem;  /* 調整字體大小 */
+            font-weight: 600;   /* 調整字體粗細 */
+            padding-left: 10px; /* 左側添加一些間距 */
+        }
+
+        /* 聊天消息區域 */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+            height: auto;
+            max-height: calc(100vh - 300px);
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: 60%;
+            border-radius: 8px;
+        }
+
+        .message.user {
+            background-color: #3498db;
+            color: white;
+            margin-left: auto;
+            margin-right: 0;
+        }
+
+        .message.ai {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            margin-right: auto;
+            margin-left: 0;
+            border: 1px solid #eee;
+            max-width: 60%;
+        }
+
+        /* 輸入區域 */
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            position: sticky;
+            bottom: 0;
+            align-items: center;
+        }
+
+        .chat-input input[type="text"] {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .chat-input select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        .chat-input button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .chat-input button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 錯誤消息樣式 */
+        .message.error {
+            background-color: #fff3f3;
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px auto;
+            border: 1px solid #ffd7d7;
+            max-width: 50%;
+        }
+
+        .knowledge-source {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
+        .source-checkbox {
+            margin-right: 10px;
+        }
+
+        .source-checkbox + label {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        #fileSelect {
+            margin-top: 10px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;  /* 初始隱藏 */
+        }
+
+        .knowledge-source-container {
+            padding: 15px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .knowledge-source-container h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .knowledge-source-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .knowledge-source-card:hover {
+            border-color: #6c5ce7;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.1);
+        }
+
+        .card-header {
+            padding: 12px 15px;
+            background: #fff;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .source-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .source-checkbox + label {
+            color: #2c3e50;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background-color: #f0f2f5;
+        }
+
+        .file-checkbox {
+            margin-right: 10px;
+        }
+
+        .file-label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .file-name {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .file-date {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .no-files {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .upload-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #6c5ce7;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .upload-link:hover {
+            background-color: #5b4bc4;
+        }
+
+        /* 自定義滾動條 */
+        .file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: #c0c0c0;
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .kb-info {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .kb-description {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .kb-description p {
+            margin: 0 0 10px 0;
+        }
+
+        .kb-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .kb-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2c3e50;
+            font-size: 0.85em;
+        }
+
+        .kb-stat i {
+            color: #6c5ce7;
+            width: 16px;
+            text-align: center;
+        }
+
+        #knowledgeBaseCard {
+            margin-top: 15px;
+        }
+
+        #knowledgeBaseCard .card-header:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <!-- 導航欄 -->
+    <div class="nav-bar">
+        <a href="{{ url_for('chat') }}" {% if request.endpoint == 'chat' %}class="active"{% endif %}>聊天</a>
+        <a href="{{ url_for('upload_file') }}" {% if request.endpoint == 'upload_file' %}class="active"{% endif %}>上傳檔案</a>
+    </div>
+
+    <div class="container">
+        <!-- 側邊欄 -->
+        <div class="sidebar">
+            <div class="knowledge-source-container">
+                <h3>選擇知識來源</h3>
+                
+                <!-- 使用上傳檔案的選項 -->
+                <div class="knowledge-source-card" id="uploadFilesCard">
+                    <div class="card-header">
+                        <input type="checkbox" id="useUploads" name="useUploads" class="source-checkbox">
+                        <label for="useUploads">使用上傳檔案</label>
+                    </div>
+                    
+                    <div class="file-list" id="fileListContainer" style="display: none;">
+                        {% if uploaded_files %}
+                            {% for file in uploaded_files %}
+                            <div class="file-item">
+                                <input type="checkbox" 
+                                       id="file_{{ loop.index }}" 
+                                       name="selected_files" 
+                                       value="{{ file.name }}"
+                                       {% if file.name in selected_files %}checked{% endif %}
+                                       class="file-checkbox">
+                                <label for="file_{{ loop.index }}" class="file-label">
+                                    <div class="file-info">
+                                        <span class="file-name">{{ file.name }}</span>
+                                        <span class="file-date">{{ file.modified }}</span>
+                                    </div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-files">
+                                <p>目前沒有上傳的文件</p>
+                                <a href="{{ url_for('upload_file') }}" class="upload-link">
+                                    <i class="fas fa-upload"></i> 上傳文件
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 使用知識庫的選項 -->
+                <div class="knowledge-source-card" id="knowledgeBaseCard">
+                    <div class="card-header">
+                        <input type="checkbox" id="useKnowledgeBase" name="useKnowledgeBase" class="source-checkbox">
+                        <label for="useKnowledgeBase">使用知識庫</label>
+                    </div>
+                    <div class="kb-info" style="display: none;">
+                        <div class="kb-description">
+                            <p>使用預設訓練的知識庫進行回答</p>
+                            <div class="kb-stats">
+                                <span class="kb-stat">
+                                    <i class="fas fa-database"></i> 知識庫大小: 1.2GB
+                                </span>
+                                <span class="kb-stat">
+                                    <i class="fas fa-calendar-alt"></i> 最後更新: 2024/03
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要內容區域 -->
+        <div class="main-content">
+            <div class="chat-container">
+                <!-- 聊天標題和清除按鈕 -->
+                <div class="chat-header">
+                    <h2>AI 聊天助手</h2>
+                    <div class="header-buttons">
+                        <form action="{{ url_for('clear_uploads') }}" method="post" style="display: inline-block; margin-right: 10px;">
+                            <button type="submit" class="clear-uploads-btn" onclick="return confirm('確定要清除所有上傳的檔案嗎？')">
+                                清除上傳檔案
+                            </button>
+                        </form>
+                        <form action="{{ url_for('clear_chat') }}" method="post" style="display: inline-block;">
+                            <button type="submit" class="clear-chat-btn">清除聊天記錄</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 聊天消息區域 -->
+                <div class="chat-messages" id="chatMessages">
+                    {% for message in messages %}
+                        <div class="message {{ message.type }}">
+                            {{ message.content }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 聊天輸入區域 -->
+                <div class="chat-input">
+                    <input type="text" id="messageInput" name="message" placeholder="輸入訊息..." required>
+                    <select id="modelSelect" name="model">
+                        <option value="ollama" {% if current_model == 'ollama' %}selected{% endif %}>Ollama</option>
+                        <option value="openai" {% if current_model == 'openai' %}selected{% endif %}>OpenAI</option>
+                    </select>
+                    <button type="submit" onclick="sendMessage()">發送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保持原有的 JavaScript 代碼不變 -->
+    <script>
+        // 處理上傳檔案的checkbox
+        document.getElementById('useUploads').addEventListener('change', function() {
+            const fileListContainer = document.getElementById('fileListContainer');
+            fileListContainer.style.display = this.checked ? 'block' : 'none';
+        });
+
+        // 處理知識庫的checkbox
+        document.getElementById('useKnowledgeBase').addEventListener('change', function() {
+            const kbInfo = document.querySelector('.kb-info');
+            kbInfo.style.display = this.checked ? 'block' : 'none';
+        });
+
+        // 修改發送消息的函數
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // 獲取知識來源設置
+            const useUploads = document.getElementById('useUploads').checked;
+            const useKnowledgeBase = document.getElementById('useKnowledgeBase').checked;
+            
+            // 獲取選中的文件
+            let selectedFiles = [];
+            if (useUploads) {
+                // 修改這裡：獲取所有被選中的文件 checkbox
+                const fileCheckboxes = document.querySelectorAll('input[name="selected_files"]:checked');
+                selectedFiles = Array.from(fileCheckboxes).map(checkbox => checkbox.value);
+            }
+            
+            // 獲取表單數據
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('model', document.getElementById('modelSelect').value);
+            
+            // 修改這裡：為每個選中的文件添加一個表單字段
+            selectedFiles.forEach(file => {
+                formData.append('selected_files[]', file);
+            });
+            
+            formData.append('use_knowledge_base', useKnowledgeBase);
+            
+            // 顯示用戶消息
+            const chatMessages = document.getElementById('chatMessages');
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message user';
+            userMessageDiv.textContent = message;
+            chatMessages.appendChild(userMessageDiv);
+            
+            // 清空輸入框
+            messageInput.value = '';
+            
+            // 滾動到最新消息
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 發送請求
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // 顯示 AI 回應
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'message ai';
+                aiMessageDiv.textContent = data.response;
+                chatMessages.appendChild(aiMessageDiv);
+                
+                // 滾動到最新消息
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message error';
+                errorDiv.textContent = '發生錯誤：' + error.message;
+                chatMessages.appendChild(errorDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+
+        // 添加按下 Enter 鍵發送消息的功能
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 當選擇文件改變時更新選擇的集合
+        document.getElementById('fileSelect')?.addEventListener('change', function() {
+            const selectedOptions = Array.from(this.selectedOptions);
+            const selectedValues = selectedOptions.map(option => option.value);
+            // 可以在這裡處理選擇的集合變化
+            console.log('Selected collections:', selectedValues);
+        });
+    </script>
+</body>
+</html> 
